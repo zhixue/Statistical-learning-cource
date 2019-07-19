@@ -1,2 +1,2 @@
-# biotrainee_training
-using python/r/shell/perl to solve the bioinformatics problems
+# Statistical learning cource taught by Teacher Wang. 
+mainly using r to solve anaylysis data
