@@ -1,2 +1,2 @@
 # Statistical learning cource taught by Teacher Wang. 
-anaylysis mainly using r
+anaylysis mainly using R
