@@ -1,0 +1,187 @@
+---
+title: "SL homework 14"
+author: "zhixue"
+date: "2019年6月4日"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 10.7 exercises
+2. Suppose that we have four observations, for which we compute a
+dissimilarity matrix, given by
+$$\begin{bmatrix}
+ & 0.3 & 0.4 & 0.7\\ 
+0.3 &  & 0.5 & 0.8\\ 
+0.4 & 0.5 &  & 0.45\\ 
+0.7 & 0.8 & 0.45 & 
+\end{bmatrix}.$$
+For instance, the dissimilarity between the first and second observations
+is 0.3, and the dissimilarity between the second and fourth
+observations is 0.8.  
+(a) On the basis of this dissimilarity matrix, sketch the dendrogram
+that results from hierarchically clustering these four observations
+using complete linkage. Be sure to indicate on the plot the
+height at which each fusion occurs, as well as the observations
+corresponding to each leaf in the dendrogram.  
+(b) Repeat (a), this time using single linkage clustering.  
+(c) Suppose that we cut the dendogram obtained in (a) such that
+two clusters result. Which observations are in each cluster?  
+(d) Suppose that we cut the dendogram obtained in (b) such that
+two clusters result. Which observations are in each cluster?  
+(e) It is mentioned in the chapter that at each fusion in the dendrogram,
+the position of the two clusters being fused can be
+swapped without changing the meaning of the dendrogram. Draw
+a dendrogram that is equivalent to the dendrogram in (a), for
+which two or more of the leaves are repositioned, but for which
+the meaning of the dendrogram is the same.
+
+```{r 10.2}
+#a
+d = as.dist(matrix(c(0, 0.3, 0.4, 0.7, 
+                     0.3, 0, 0.5, 0.8,
+                     0.4, 0.5, 0.0, 0.45,
+                     0.7, 0.8, 0.45, 0.0), nrow=4))
+plot(hclust(d, method="complete"))
+#b
+plot(hclust(d, method="single"))
+#c {1,2}, {3,4}
+#d {4}, {1,2,3}
+#e
+plot(hclust(d, method="complete"), labels=c(2,1,4,3))
+```
+
+
+
+4. Suppose that for a particular data set, we perform hierarchical clustering
+using single linkage and using complete linkage. We obtain two
+dendrograms.  
+(a) At a certain point on the single linkage dendrogram, the clusters
+{1, 2, 3} and {4, 5} fuse. On the complete linkage dendrogram,
+the clusters {1, 2, 3} and {4, 5} also fuse at a certain point.
+Which fusion will occur higher on the tree, or will they fuse at
+the same height, or is there not enough information to tell?  
+(b) At a certain point on the single linkage dendrogram, the clusters
+{5} and {6} fuse. On the complete linkage dendrogram, the clusters
+{5} and {6} also fuse at a certain point. Which fusion will
+occur higher on the tree, or will they fuse at the same height, or
+is there not enough information to tell?
+
+#### Answer
+a. There not enough information to tell. If the max(complete) dissimilarity is equal to the min(single) dissimilarity, they fuse at the same height, otherwise the min(single) would fuse early.  
+b. They fuse at the same height because the dissimilarity between 5 and 6 is only decided by two points. IN other words, the max dissimilarity is equal to the min dissimilarity.
+
+
+
+
+6. A researcher collects expression measurements for 1,000 genes in 100
+tissue samples. The data can be written as a 1, 000 × 100 matrix,
+which we call X, in which each row represents a gene and each column
+a tissue sample. Each tissue sample was processed on a different
+day, and the columns of X are ordered so that the samples that were
+processed earliest are on the left, and the samples that were processed
+later are on the right. The tissue samples belong to two groups: control(C) and treatment (T). The C and T samples were processed
+in a random order across the days. The researcher wishes to determine
+whether each gene’s expression measurements differ between the
+treatment and control groups.
+As a pre-analysis (before comparing T versus C), the researcher performs
+a principal component analysis of the data, and finds that the
+first principal component (a vector of length 100) has a strong linear
+trend from left to right, and explains 10 % of the variation. The researcher
+now remembers that each patient sample was run on one of
+two machines, A and B, and machine A was used more often in the
+earlier times while B was used more often later. The researcher has
+a record of which sample was run on which machine.  
+(a) Explain what it means that the first principal component “explains
+10 % of the variation”.  
+(b) The researcher decides to replace the (j, i)th element of X with
+$$x_{ji}-\phi_{j1}z{i1}$$
+where $z_{i1}$ is the ith score, and $φ_{j1}$ is the jth loading, for the first
+principal component. He will then perform a two-sample t-test
+on each gene in this new data set in order to determine whether
+its expression differs between the two conditions. Critique this
+idea, and suggest a better approach. (The principal component
+analysis is performed on $X^T$ ).  
+(c) Design and run a small simulation experiment to demonstrate
+the superiority of your idea.  
+
+a. Only 10% variation is catched by first principal component(a linear combine of genes) while left 90% varation is lost.
+
+b. It is better to deal with batch effects(produced by different machine A or B) before using two-sample test.
+
+c. Doing simulation of batch effects, if batch effects are included, the proportion of variance will be larger.
+```{r 10.6}
+#generate
+set.seed(0)
+control = matrix(rnorm(50*1000),ncol=50)
+treatment = matrix(rnorm(50*1000),ncol=50)
+express = cbind(control,treatment)
+express[1,] = seq(-50,49)
+
+pr.out = prcomp(scale(express))
+summary(pr.out)$importance[,1]
+
+#add batch effect
+new_express = rbind(express,c(rep(34,50),rep(1,50)))
+pr.out = prcomp(scale(new_express))
+summary(pr.out)$importance[,1]
+```
+
+
+8. In Section 10.2.3, a formula for calculating PVE was given in Equation
+10.8. We also saw that the PVE can be obtained using the sdev
+output of the prcomp() function.
+On the USArrests data, calculate PVE in two ways:
+(a) Using the sdev output of the prcomp() function, as was done in
+Section 10.2.3.
+(b) By applying Equation 10.8 directly. That is, use the prcomp()
+function to compute the principal component loadings. Then,
+use those loadings in Equation 10.8 to obtain the PVE.
+These two approaches should give the same results.
+Hint: You will only obtain the same results in (a) and (b) if the same
+data is used in both cases. For instance, if in (a) you performed
+prcomp() using centered and scaled variables, then you must center
+and scale the variables before applying Equation 10.3 in (b).
+
+
+
+10. In this problem, you will generate simulated data, and then perform
+PCA and K-means clustering on the data.  
+(a) Generate a simulated data set with 20 observations in each of
+three classes (i.e. 60 observations total), and 50 variables.
+Hint: There are a number of functions in R that you can use to
+generate data. One example is the rnorm() function; runif() is
+another option. Be sure to add a mean shift to the observations
+in each class so that there are three distinct classes.  
+(b) Perform PCA on the 60 observations and plot the first two principal
+component score vectors. Use a different color to indicate
+the observations in each of the three classes. If the three classes
+appear separated in this plot, then continue on to part (c). If
+not, then return to part (a) and modify the simulation so that
+there is greater separation between the three classes. Do not
+continue to part (c) until the three classes show at least some
+separation in the first two principal component score vectors.  
+(c) Perform K-means clustering of the observations with K = 3.
+How well do the clusters that you obtained in K-means clustering
+compare to the true class labels?  
+Hint: You can use the table() function in R to compare the true
+class labels to the class labels obtained by clustering. Be careful
+how you interpret the results: K-means clustering will arbitrarily
+number the clusters, so you cannot simply check whether the true
+class labels and clustering labels are the same.
+(d) Perform K-means clustering with K = 2. Describe your results.
+(e) Now perform K-means clustering with K = 4, and describe your
+results.  
+(f) Now perform K-means clustering with K = 3 on the first two
+principal component score vectors, rather than on the raw data.
+That is, perform K-means clustering on the 60 × 2 matrix of
+which the first column is the first principal component score
+vector, and the second column is the second principal component
+score vector. Comment on the results.  
+(g) Using the scale() function, perform K-means clustering with
+K = 3 on the data after scaling each variable to have standard
+deviation one. How do these results compare to those obtained
+in (b)? Explain.
+

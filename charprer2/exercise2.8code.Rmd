@@ -1,0 +1,116 @@
+---
+title: "hk2"
+author: "zhixue"
+date: "2019.3.14"
+output:
+  word_document: default
+  html_document: default
+---
+
+## 2.8
+### 2.8.a
+
+```{r 2.8}
+# (a)
+college=read.csv('College.csv')
+
+# (b)
+rownames(college)=college[,1]
+fix(college)
+
+college=college[,-1]
+fix(college)
+
+# (c)
+# i
+summary(college)
+# ii
+pairs(college[,1:10])
+# iii
+plot(college$Outstate,college$Private)
+# iiii
+Elite=rep("No",nrow(college))
+Elite[college$Top10perc>50]="Yes"
+Elite=as.factor(Elite)
+college=data.frame(college,Elite)
+summary(college$Elite)
+plot(college$Outstate, college$Elite)
+# iiiii
+par(mfrow=c(2,2))
+hist(college$Apps)
+hist(college$Accept)
+hist(college$Enroll)
+hist(college$Top10perc)
+# iiiiii
+pairs(college)#plot(college)
+#some of correlation pairs:(Apps,Accept),(Apps,Enroll),(Apps,F.Undergrad),(Accept,Enroll),(Accept,F.Undergrad),(Enroll,F.Undergrad),(Top10perc,Top25perc) 
+```
+
+```{r 2.10}
+# (a)
+library(MASS)
+#Boston (ouput too long)
+?Boston
+dim(Boston) #row 505, col 14 ,row means housing Values record, cols means
+#crim
+#per capita crime rate by town.
+#zn
+#proportion of residential land zoned for lots over 25,000 sq.ft.
+#indus
+#proportion of non-retail business acres per town.
+#chas
+#Charles River dummy variable (= 1 if tract bounds river; 0 otherwise).
+#nox
+#nitrogen oxides concentration (parts per 10 million).
+#rm
+#average number of rooms per dwelling.
+#age
+#proportion of owner-occupied units built prior to 1940.
+#dis
+#weighted mean of distances to five Boston employment centres.
+#rad
+#index of accessibility to radial highways.
+#tax
+#full-value property-tax rate per \$10,000.
+#ptratio
+#pupil-teacher ratio by town.
+#black
+#1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town.
+#lstat
+#lower status of the population (percent).
+#medv
+#median value of owner-occupied homes in \$1000s.
+
+# (b)
+#cor(Boston)>0.5
+pairs(Boston)   #some of correlation pairs:(crim,age),(crim,dis),(crim,rad),(crim,tax),(crim,ptratio),(indus,chas),(indus,age),(indus,dis),(nox,age),(nox,dis),(rm,lstat),(rm,medv),(age,dis),(lstat,medv)
+
+# (c)
+plot(Boston$age,Boston$crim)    # higher age, high crim
+plot(Boston$dis,Boston$crim)    # lower dis, high crim
+plot(Boston$rad,Boston$crim)    # higher rad, high crim
+plot(Boston$tax,Boston$crim)    # higher tax, high crim
+plot(Boston$ptratio,Boston$crim)# higher ptratio, high crim
+
+# (d)
+hist(Boston$crim) # most of them with low crim , some have high crim(nearly 20) 
+hist(Boston$tax) # two subgroups ,some are high(650~700),some are low(150~450)
+hist(Boston$ptratio) # highest frequency of ptratio is near 20
+
+# (e)
+dim(Boston[which(Boston$chas==1),]) #35
+
+# (f)
+median(Boston$ptratio) #19.05
+
+# (g)
+Boston[which(Boston$medv==min(Boston$medv)),] # lowest medv
+summary(Boston) # indus is high, nox is a little high, rm is a little low, age is high, dis is low, rad is high, tax is high, ptratio is high, black is high
+
+# (h)
+dim(Boston[Boston$rm>7,]) # 64
+dim(Boston[Boston$rm>8,]) # 13
+summary(Boston[Boston$rm>8,])
+summary(Boston) # lower crim,lstat,higher medv
+```
+

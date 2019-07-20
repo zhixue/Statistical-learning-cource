@@ -1,0 +1,205 @@
+---
+output: html_document
+---
+
+> 8. In the lab, a classification tree was applied to the Carseats data set after
+converting Sales into a qualitative response variable. Now we will
+seek to predict Sales using regression trees and related approaches,
+treating the response as a quantitative variable.  
+(a) Split the data set into a training set and a test set.  
+(b) Fit a regression tree to the training set. Plot the tree, and interpret
+the results. What test MSE do you obtain?  
+(c) Use cross-validation in order to determine the optimal level of
+tree complexity. Does pruning the tree improve the test MSE?  
+(d) Use the bagging approach in order to analyze this data. What
+test MSE do you obtain? Use the importance() function to determine
+which variables are most important.  
+(e) Use random forests to analyze this data. What test MSE do you
+obtain? Use the importance() function to determine which variables
+are most important. Describe the effect of m, the number of
+variables considered at each split, on the error rate
+obtained.  
+
+```{r 8.8}
+library(ISLR)
+attach(Carseats)
+
+# (a)
+set.seed(0)
+record_num = nrow(Carseats)
+test_percent = 1/10
+train_idx = sample(record_num, record_num*(1-test_percent))
+train_data = Carseats[train_idx,]
+test_data = Carseats[-train_idx,]
+
+# (b)
+#install.packages('tree')
+library(tree)
+treer_model = tree(Sales ~ ., data = train_data)
+summary(treer_model)
+# plot tree
+plot(treer_model)
+text(treer_model)
+# mse
+pred.treer = predict(treer_model,test_data)
+mse = mean((pred.treer-test_data$Sales)^2)
+print(mse) # 7.747241
+
+# (c)
+cv.treer_model = cv.tree(treer_model,K = 10)
+par(mfrow = c(1, 2))
+plot(cv.treer_model$size,cv.treer_model$dev,type = 'b')
+# k	cost-complexity parameter defining either a specific subtree of tree (k a scalar) or the (optional) sequence of subtrees minimizing the cost-complexity measure (k a vector). If missing, k is determined algorithmically.
+plot(cv.treer_model$k,cv.treer_model$dev,type = 'b')
+# size = 9
+pruned.treer = prune.tree(treer_model, best = 9)
+# plot
+par(mfrow = c(1, 1))
+plot(pruned.treer)
+text(pruned.treer)
+# mse
+pred.pruned.treer = predict(pruned.treer,test_data)
+mse = mean((pred.pruned.treer-test_data$Sales)^2)
+print(mse) # 7.62105
+
+# (d)
+#install.packages('randomForest')
+library(randomForest)
+set.seed(0)
+# bag is a special case of randomforest that m=p
+bag.model = randomForest(Sales ~ ., data = train_data,mtry = ncol(Carseats) - 1, importance = T)
+pred.bag= predict(bag.model, test_data)
+mse = mean((pred.bag-test_data$Sales)^2)
+print(mse) 
+
+# important variables: ShelveLoc > Price > CompPrice > Advertising > Age > ...
+importance(bag.model)
+
+# (e) use m = p/2 randomforest, which has a little larger mse than bagging 
+rf.model = randomForest(Sales ~ ., data = train_data, mtry = floor(ncol(Carseats)/2), importance = T)
+pred.rf= predict(rf.model, test_data)
+mse = mean((pred.rf-test_data$Sales)^2)
+print(mse) 
+
+# important variables:  Price > ShelveLoc > CompPrice > Advertising > Age > ...  
+importance(rf.model)
+```
+
+
+> 10.  We now use boosting to predict Salary in the Hitters data set.  
+(a) Remove the observations for whom the salary information is
+unknown, and then log-transform the salaries.  
+(b) Create a training set consisting of the first 200 observations, and
+a test set consisting of the remaining observations.  
+(c) Perform boosting on the training set with 1,000 trees for a range
+of values of the shrinkage parameter λ. Produce a plot with
+different shrinkage values on the x-axis and the corresponding
+training set MSE on the y-axis.  
+(d) Produce a plot with different shrinkage values on the x-axis and
+the corresponding test set MSE on the y-axis.  
+(e) Compare the test MSE of boosting to the test MSE that results
+from applying two of the regression approaches seen in
+Chapters 3 and 6.  
+(f) Which variables appear to be the most important predictors in
+the boosted model?  
+(g) Now apply bagging to the training set. What is the test set MSE
+for this approach?  
+
+```{r 8.10}
+# (a)
+library(ISLR)
+Hitters = Hitters[-which(is.na(Hitters$Salary)), ]
+Hitters$Salary = log(Hitters$Salary)
+
+# (b)
+train = 1:200
+Hitters.train = Hitters[train, ]
+Hitters.test = Hitters[-train, ]
+
+# (c) (d)
+# install.package('gbm')
+library(gbm)
+set.seed(0)
+# init
+pows = seq(-10, -0.2, by = 0.1)
+lambdas = 10^pows
+length.lambdas = length(lambdas)
+train.errors = rep(NA, length.lambdas)
+test.errors = rep(NA, length.lambdas)
+# start
+for (i in 1:length.lambdas) {
+    boost.hitters = gbm(Salary ~ ., data = Hitters.train, distribution = "gaussian", 
+        n.trees = 1000, shrinkage = lambdas[i])
+    train.pred = predict(boost.hitters, Hitters.train, n.trees = 1000)
+    test.pred = predict(boost.hitters, Hitters.test, n.trees = 1000)
+    train.errors[i] = mean((Hitters.train$Salary - train.pred)^2)
+    test.errors[i] = mean((Hitters.test$Salary - test.pred)^2)
+}
+
+plot(lambdas, train.errors, type = "b")
+plot(lambdas, test.errors, type = "b",col='red')
+
+# (e)
+# linear regression
+lm.fit = lm(Salary ~ ., data = Hitters.train)
+lm.pred = predict(lm.fit, Hitters.test)
+mean((Hitters.test$Salary - lm.pred)^2)
+
+# lasso
+library(glmnet)
+set.seed(0)
+x = model.matrix(Salary ~ ., data = Hitters.train)
+y = Hitters.train$Salary
+x.test = model.matrix(Salary ~ ., data = Hitters.test)
+lasso.fit = glmnet(x, y, alpha = 1)
+lasso.pred = predict(lasso.fit, s = 0.01, newx = x.test)
+mean((Hitters.test$Salary - lasso.pred)^2)
+
+# (f) CAtBat > PutOuts > CWalks > Walks > CRuns > Years   
+boost.best = gbm(Salary ~ ., data = Hitters.train, distribution = "gaussian",n.trees = 1000, shrinkage = lambdas[which.min(test.errors)])
+summary(boost.best)
+
+# (g)
+bag.hitters = randomForest(Salary ~ ., data = Hitters.train, ntree = 500, mtry = ncol(Hitters)-1)
+bag.pred = predict(bag.hitters, Hitters.test)
+mean((Hitters.test$Salary - bag.pred)^2)
+```
+
+
+> 12. Apply boosting, bagging, and random forests to a data set of your
+choice. Be sure to fit the models on a training set and to evaluate their
+performance on a test set. How accurate are the results compared
+to simple methods like linear or logistic regression? Which of these
+approaches yields the best performance?
+
+```{r 8.12}
+library(MASS)
+attach(Boston)
+test_percent = 1/10
+train_idx = sample(record_num, record_num*(1-test_percent))
+train_data = Boston[train_idx,]
+test_data = Boston[-train_idx,]
+### linear(41.3),boosting(22.0),bagging(17.1*best),randomforest(18.2)
+# linear regression
+lm.fit = lm(medv ~ . , data = train_data)
+lm.pred = predict(lm.fit, newdata = test_data)
+print(mean((lm.pred - test_data$medv)^2))
+
+# boosting
+library(gbm)
+boost.model=gbm(medv~.,data=train_data,distribution="gaussian",n.trees=5000,interaction.depth=4)
+pred.boost = predict(boost.model,newdata=test_data,n.trees=5000)
+print(mean((pred.boost-test_data$medv)^2)) 
+
+# bagging
+library(randomForest)
+set.seed(0)
+bag.model = randomForest(medv ~ ., data = train_data,mtry = ncol(Carseats) - 1, importance = T)
+pred.bag= predict(bag.model, test_data)
+print(mean((pred.bag-test_data$medv)^2)) 
+
+# randomforest
+rf.model = randomForest(medv ~ ., data = train_data, mtry = floor(ncol(Carseats)/2), importance = T)
+pred.rf= predict(rf.model, test_data)
+print(mean((pred.rf-test_data$medv)^2))
+```

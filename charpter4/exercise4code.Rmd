@@ -1,0 +1,167 @@
+---
+title: "slhk5"
+author: "zhixue"
+date: "2019年4月4日"
+output: html_document
+---
+# 4.10
+```{r 4.10}
+library('ISLR')
+# a ## It seem that there is a relation bewteen Year adn Volume. 
+summary(Weekly)
+plot(Weekly)
+
+
+# b ## Lag2 appears to be statistically significant.
+model1 = glm(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, data = Weekly, family = binomial)
+summary(model1)
+
+
+# c
+## overall fraction of correct prediction:(54+557)/(54+48+430+557)=0.5610652
+## when direction is down, logistic model always be wrong: 430/(430+54)
+## when direction is up, logistic model sometimes be wrong: 48/(48+557)
+model1.prob = predict(model1,type='response')
+model1.label = rep("up", length(model1.prob))
+model1.label[model1.prob < 0.5] = "down"
+table(model1.label,Weekly$Direction)
+
+
+# d
+## overall fraction of correct prediction:(9+56)/(9+5+34+56)=0.625
+model2 = glm(Direction ~ Lag2, data = Weekly[Weekly$Year < 2009,], family = binomial)
+model2.prob = predict(model2,Weekly[Weekly$Year >= 2009,],type='response')
+model2.label = rep("up", length(model2.prob))
+model2.label[model2.prob < 0.5] = "down"
+table(model2.label,Weekly[Weekly$Year >= 2009,]$Direction)
+
+
+# e lda
+## overall fraction of correct prediction:(9+56)/(9+5+34+56)=0.625
+library(MASS)
+ldamodel = lda(Direction ~ Lag2, data = Weekly[Weekly$Year < 2009,], family = binomial)
+ldamodel.pred = predict(ldamodel, Weekly[Weekly$Year >= 2009,],type='response')
+table(ldamodel.pred$class,Weekly[Weekly$Year >= 2009,]$Direction)
+
+
+# f qda
+## overall fraction of correct prediction:(0+61)/(0+0+43+61)=0.5865385
+qdamodel = qda(Direction ~ Lag2, data = Weekly[Weekly$Year < 2009,], family = binomial)
+qdamodel.pred = predict(qdamodel, Weekly[Weekly$Year >= 2009,],type='response')
+table(qdamodel.pred$class,Weekly[Weekly$Year >= 2009,]$Direction)
+
+
+# g knn (k=1)
+## overall fraction of correct prediction:(21+31)/(21+30+22+31)=0.5
+#install.packages("class")
+library(class)
+trainx = as.matrix(Weekly$Lag2[Weekly$Year<2009])
+testx = as.matrix(Weekly$Lag2[Weekly$Year>=2009])
+knn.pred = knn(trainx, testx, Weekly$Direction[Weekly$Year<2009], k = 1)
+table(knn.pred, Weekly$Direction[Weekly$Year>=2009])
+
+
+# h
+print('LDA & Logistic Regression') 
+
+# i
+## logistic lag1+lag2
+## overall fraction of correct prediction:(7+53)/(7+8+36+53)=0.5769231
+logistic1_model = glm(Direction ~ Lag1 + Lag2, data = Weekly[Weekly$Year < 2009,], family = binomial)
+logistic1_model.prob = predict(logistic1_model,Weekly[Weekly$Year >= 2009,],type='response')
+logistic1_model.label = rep("up", length(logistic1_model.prob))
+logistic1_model.label[logistic1_model.prob < 0.5] = "down"
+table(logistic1_model.label,Weekly[Weekly$Year >= 2009,]$Direction)
+
+
+## logistic lag2 + lag2&lag1
+## overall fraction of correct prediction: (3+58)/(3+3+40+58)=0.5865385
+logistic2_model = glm(Direction ~ Lag1:Lag2 + Lag2, data = Weekly[Weekly$Year < 2009,], family = binomial)
+logistic2_model.prob = predict(logistic2_model,Weekly[Weekly$Year >= 2009,],type='response')
+logistic2_model.label = rep("up", length(logistic2_model.prob))
+logistic2_model.label[logistic2_model.prob < 0.5] = "down"
+table(logistic2_model.label,Weekly[Weekly$Year >= 2009,]$Direction)
+
+
+## lda lag2 + lag1
+## overall fraction of correct prediction: (7+51)/(7+10+36+51)= 0.5576923
+qda1model = qda(Direction ~ Lag2 + Lag1, data = Weekly[Weekly$Year < 2009,], family = binomial)
+qda1model.pred = predict(qda1model, Weekly[Weekly$Year >= 2009,],type='response')
+table(qda1model.pred$class,Weekly[Weekly$Year >= 2009,]$Direction)
+
+
+## lda lag2 + lag1&lag2
+## overall fraction of correct prediction: (24+24)/(24+37+19+24)= 0.4615385
+qda2model = qda(Direction ~ Lag2 + Lag1:Lag2, data = Weekly[Weekly$Year < 2009,], family = binomial)
+qda2model.pred = predict(qda2model, Weekly[Weekly$Year >= 2009,],type='response')
+table(qda2model.pred$class,Weekly[Weekly$Year >= 2009,]$Direction)
+
+
+# qda Lag2 + Lag1
+## overall fraction of correct prediction:(7+51)/(7+10+36+51)=0.5576923
+qda1model = qda(Direction ~ Lag2 + Lag1, data = Weekly[Weekly$Year < 2009,], family = binomial)
+qda1model.pred = predict(qda1model, Weekly[Weekly$Year >= 2009,],type='response')
+table(qda1model.pred$class,Weekly[Weekly$Year >= 2009,]$Direction)
+
+
+# qda Lag2 + Lag1&Lag2
+## overall fraction of correct prediction:(24+24)/(24+37+19+24)=0.4615385
+qda2model = qda(Direction ~ Lag2 + Lag1:Lag2, data = Weekly[Weekly$Year < 2009,], family = binomial)
+qda2model.pred = predict(qda2model, Weekly[Weekly$Year >= 2009,],type='response')
+table(qda2model.pred$class,Weekly[Weekly$Year >= 2009,]$Direction)
+
+
+# knn n=3
+## overall fraction of correct prediction:(16+41)/(16+20+27+41)=0.5480769
+trainx = as.matrix(Weekly$Lag2[Weekly$Year<2009])
+testx = as.matrix(Weekly$Lag2[Weekly$Year>=2009])
+knn3.pred = knn(trainx, testx, Weekly$Direction[Weekly$Year<2009], k = 3)
+table(knn3.pred, Weekly$Direction[Weekly$Year>=2009])
+
+
+# knn n=5
+## overall fraction of correct prediction:(16+39)/(16+22+27+39)=0.5288462
+trainx = as.matrix(Weekly$Lag2[Weekly$Year<2009])
+testx = as.matrix(Weekly$Lag2[Weekly$Year>=2009])
+knn5.pred = knn(trainx, testx, Weekly$Direction[Weekly$Year<2009], k = 5)
+table(knn5.pred, Weekly$Direction[Weekly$Year>=2009])
+
+## summary
+print('summary:lda(Lag2),logistic(Lag2) are better than others')
+
+```
+
+# 4.12
+```{r 4.12}
+# a
+Power = function(){
+    print(2^3)
+}
+
+# b
+Power2 = function(x,a){
+    print(x^a)
+}
+Power2(3,8)
+
+# c
+Power2(10,3)
+Power2(8,17)
+Power2(131,3)
+
+# d
+Power3 = function(x, a) {
+    result = x^a
+    return(result)
+}
+
+# e
+x = 1:10
+plot(x, Power3(x, 2), log = "y", ylab = "Log of y = x^2", xlab = "x")
+
+# f
+PlotPower = function(x, a) {
+    plot(x,Power3(x, a))
+}
+PlotPower(1:10, 3)
+```

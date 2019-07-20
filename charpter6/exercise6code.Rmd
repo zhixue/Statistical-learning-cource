@@ -1,0 +1,223 @@
+---
+title: "hk7"
+author: "zhixue"
+date: "2019年4月16日"
+output: html_document
+---
+
+## 6.6
+```{r 6.6}
+lambda = 1
+y = 1
+beta1 = seq(-5,5,0.05)
+#(a)
+fl2 = (y-beta1)^2 + lambda*beta1^2
+plot(beta1,fl2,main='ridge')
+
+widehat_beta1 = y/(1+lambda)
+widehat_y1 = (y-widehat_beta1)^2 + lambda*widehat_beta1^2
+points(widehat_beta1,widehat_y1,col='red',pch=15)
+#(b)
+fl1 = (y-beta1)^2 + lambda*abs(beta1)
+plot(beta1,fl1,main='lasso')
+
+widehat_beta1 = y-lambda/2 # due to 1 > 1/2
+widehat_y1 = (y-widehat_beta1)^2 + lambda*abs(widehat_beta1)
+points(widehat_beta1,widehat_y1,col='red',pch=16)
+```
+
+
+## 6.8
+```{r 6.8}
+set.seed(0)
+#(a)
+x=rnorm(100)
+epsilon=rnorm(100)
+#(b)
+beta0=4
+beta1=3
+beta2=2
+beta3=1
+y= beta0 + beta1*x + beta2*x^2 + beta3*x^3 + epsilon
+#(c)
+library(leaps)
+dta = data.frame(x=x,y=y)
+md1=regsubsets(y ~ poly(x, 10, raw = T), data = dta, nvmax = 10)
+par(mfrow = c(1, 3))
+#cp
+which.min(summary(md1)$cp)
+plot(summary(md1)$cp,xlab='poly',ylab='cp',type = 'l')
+points(which.min(summary(md1)$cp),min(summary(md1)$cp),col='red',pch=10)
+#bic
+which.min(summary(md1)$bic)
+plot(summary(md1)$bic,xlab='poly',ylab='bic',type = 'l')
+points(which.min(summary(md1)$bic),min(summary(md1)$bic),col='red',pch=11)
+#adjr2
+which.min(summary(md1)$adjr2)
+plot(summary(md1)$adjr2,xlab='poly',ylab='adjr2',type = 'l')
+points(which.min(summary(md1)$adjr2),min(summary(md1)$adjr2),col='red',pch=12)
+#coefficients
+coefficients(md1,id=3)
+coefficients(md1,id=1)
+
+#(d)
+## similar results
+par(mfrow = c(2, 3))
+#forward
+md2=regsubsets(y ~ poly(x, 10, raw = T), data = dta, nvmax = 10,method='forward')
+#cp
+which.min(summary(md2)$cp)
+plot(summary(md2)$cp,xlab='poly',ylab='cp',type = 'l')
+points(which.min(summary(md2)$cp),min(summary(md2)$cp),col='red',pch=10)
+#bic
+which.min(summary(md2)$bic)
+plot(summary(md2)$bic,xlab='poly',ylab='bic',type = 'l')
+points(which.min(summary(md2)$bic),min(summary(md2)$bic),col='red',pch=11)
+#adjr2
+which.min(summary(md2)$adjr2)
+plot(summary(md2)$adjr2,xlab='poly',ylab='adjr2',type = 'l')
+points(which.min(summary(md2)$adjr2),min(summary(md2)$adjr2),col='red',pch=12)
+#coefficients
+coefficients(md2,id=3)
+coefficients(md2,id=1)
+
+#backward
+md3=regsubsets(y ~ poly(x, 10, raw = T), data = dta, nvmax = 10,method='forward')
+#cp
+which.min(summary(md3)$cp)
+plot(summary(md3)$cp,xlab='poly',ylab='cp',type = 'l')
+points(which.min(summary(md3)$cp),min(summary(md3)$cp),col='red',pch=10)
+#bic
+which.min(summary(md3)$bic)
+plot(summary(md3)$bic,xlab='poly',ylab='bic',type = 'l')
+points(which.min(summary(md3)$bic),min(summary(md3)$bic),col='red',pch=11)
+#adjr2
+which.min(summary(md3)$adjr2)
+plot(summary(md3)$adjr2,xlab='poly',ylab='adjr2',type = 'l')
+points(which.min(summary(md3)$adjr2),min(summary(md3)$adjr2),col='red',pch=12)
+#coefficients
+coefficients(md3,id=3)
+coefficients(md3,id=1)
+
+#(e)
+#install.packages("glmnet")
+library(glmnet)
+xmat = model.matrix(y ~ poly(x, 10, raw = T), data = dta)[, -1]
+# cross-validation
+cv.lasso.mod = cv.glmnet(xmat,y,alpha = 1)
+best.cv.lambda = min(cv.lasso.mod$lambda)
+best.cv.lambda
+par(mfrow = c(1, 1))
+plot(cv.lasso.mod)
+# function
+plot_cv = function(lambda){
+    cv.lasso.mod = cv.glmnet(xmat,y,alpha = 1,lambda = lambda)
+    plot(cv.lasso.mod)
+}
+#plot_cv(seq(1,10,0.5))
+
+#all data
+# Next fit the model on entire data using best lambda
+best.lasso.model = glmnet(xmat, y, alpha = 1)
+predict(best.lasso.model, s = best.cv.lambda, type = "coefficients")
+
+#(f)
+beta7 = 2
+y = beta7*x^7+beta0+epsilon
+dta = data.frame(x=x,y=y)
+sub.mod = regsubsets(y~poly(x,10,raw=T),data=dta,nvmax = 10)
+##using cp&bic are same in this case and the models nearest to the fact.
+#cp
+id_cp=which.min(summary(sub.mod)$cp)
+id_cp
+coefficients(sub.mod,id=id_cp)
+#bic
+id_bic=which.min(summary(sub.mod)$bic)
+id_bic
+coefficients(sub.mod,id=id_bic)
+#adjr2
+id_adjr2=which.min(summary(sub.mod)$adjr2)
+id_adjr2
+coefficients(sub.mod,id=id_adjr2)
+
+#lasso
+# lasso model is similar to the fact but not better enough subset method. 
+xmat = model.matrix(y ~ poly(x, 10, raw = T), data = dta)[, -1]
+mod.lasso = cv.glmnet(xmat, y, alpha = 1)
+best.lambda = min(mod.lasso$lambda)
+best.lambda
+
+best.model = glmnet(xmat, y, alpha = 1)
+predict(best.model, s = best.lambda, type = "coefficients")
+```
+
+```{r 6.10}
+set.seed(0)
+#(a)
+p = 20
+n = 1000
+x = matrix(rnorm(n * p), n, p)
+beta = rnorm(20)*10
+beta[2:16]=0
+epslion = rnorm(20)
+y =x %*% beta + epslion    
+
+#(b)
+train = sample(seq(1000), 100, replace = FALSE)
+y.train = y[train, ]
+y.test = y[-train, ]
+x.train = x[train, ]
+x.test = x[-train, ]
+
+#(c)
+library(leaps)
+regsub.mod = regsubsets(y ~ ., data = data.frame(x = x.train, y = y.train), nvmax = p)
+train.val.errors = rep(NA, p)
+x_cols = colnames(x, do.NULL = FALSE, prefix = "x.")
+for (i in 1:p) {
+    coef_i = coef(regsub.mod, id = i)
+    pred = as.matrix(x.train[, x_cols %in% names(coef_i)]) %*% coef_i[names(coef_i) %in% 
+        x_cols]
+    train.val.errors[i] = mean((y.train - pred)^2)
+}
+plot(train.val.errors, ylab = "trainning mse", pch = 15, type = "b")
+
+#(d)
+test.val.errors = rep(NA, p)
+for (i in 1:p) {
+    coef_i = coef(regsub.mod, id = i)
+    pred = as.matrix(x.test[, x_cols %in% names(coef_i)]) %*% coef_i[names(coef_i) %in% 
+        x_cols]
+    test.val.errors[i] = mean((y.test - pred)^2)
+}
+plot(test.val.errors, ylab = "test mse", pch = 16, type = "b")
+
+#(e)
+# choose nearly smallest error with less parameters
+# 5 parameters
+which.min(test.val.errors)
+test.val.errors
+
+#(f)
+# it is near the fact but intercept(0.84) is not very correct(-0.0048)
+#estimate
+coef(regsub.mod, id = 5)
+#fact
+beta
+
+#(g)
+parameter_num = rep(0,p)
+err = rep(0,p)
+x_cols = colnames(x, do.NULL = FALSE, prefix = "x.")
+
+for (i in 1:p) {
+    coef_i = coef(regsub.mod, id = i)
+    parameter_num[i] = length(coef_i) - 1
+    selected_x = x_cols %in% names(coef_i)
+    # estimated parameters not in coef is 0
+    err[i] =  sqrt(sum((beta[selected_x] - coef_i[names(coef_i) %in% x_cols])^2) + sum(beta[!selected_x])^2)
+}
+# 5 parameters model minimizes the error of estimated and true beta. This model also minimized the test error of y.
+plot(x=parameter_num,y=err,type = 'l')
+which.min(err)
+```

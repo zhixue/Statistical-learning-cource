@@ -1,0 +1,98 @@
+---
+title: "Hk6"
+author: "zhixue"
+date: "4/4/2019"
+output: html_document
+---
+### 5.4 plot
+```{R 5.2.g}
+f = function(n){
+    return(1-(1-1/n)^n)
+}
+
+# quickly fall near 1 - 1/e
+x = 1:100000
+plot(x,f(x))
+```
+
+### exericse 5.6
+```{R 5.6}
+library(ISLR)
+attach(Default)
+# a
+logistic_model = glm(default ~ balance + income, data = Default, family = 'binomial')
+summary(logistic_model)
+
+# b 
+boot.fn = function(data,idx){
+  temp_model = glm(default ~ balance + income, data = data, family = 'binomial', subset = idx)
+  return(coef(temp_model))
+}
+
+# c
+library('boot')
+# default sample number = 10000
+boot(Default,boot.fn,length(default)/10)
+
+# d
+print('result in (c) is similar in (a)')
+```
+
+### exericse 5.8
+```{R 5.8}
+# a
+set.seed(1)
+y = rnorm(100)
+x = rnorm(100)
+y = x - 2 * x^2 + rnorm(100)
+
+# b ## x is range from -2 to 2; y is range from -8 to 3; the shape is like a parabola.
+plot(x,y)
+
+# c
+set.seed(1)
+library('boot')
+dataxy = data.frame(x,y)
+## i
+md1 = glm(y ~ poly(x,1))
+cv.glm(dataxy,md1)$delta
+## ii
+md2 = glm(y ~ poly(x,2))
+cv.glm(dataxy,md2)$delta
+## iii
+md3 = glm(y ~ poly(x,3))
+cv.glm(dataxy,md3)$delta
+## iiii
+md4 = glm(y ~ poly(x,4))
+cv.glm(dataxy,md4)$delta
+
+# d ## nearly same
+set.seed(2)
+library('boot')
+dataxy = data.frame(x,y)
+## i
+md1 = glm(y ~ poly(x,1))
+cv.glm(dataxy,md1)$delta
+## ii
+md2 = glm(y ~ poly(x,2))
+cv.glm(dataxy,md2)$delta
+## iii
+md3 = glm(y ~ poly(x,3))
+cv.glm(dataxy,md3)$delta
+## iiii
+md4 = glm(y ~ poly(x,4))
+cv.glm(dataxy,md4)$delta
+
+# e
+print('poly(x,2) has small one. It is near the fact.')
+
+# f
+summary(md1)
+summary(md2)
+summary(md3)
+summary(md4)
+
+# similar result can be got from p-value.
+```
+
+
