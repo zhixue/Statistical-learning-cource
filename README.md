@@ -2,7 +2,7 @@
 The statistical methods in data science course is taught by teacher Wang.
 book - ISL, anaylysis mainly using R
 
-Charpter | Topic
+Charpter homework | Topic
 --- | ---
 1 | Introduction
 2 | Concepts
