@@ -10,7 +10,7 @@ Charpter homework | Topic
 4 | Classification
 5 | Resampling methods
 6 | Model selection and regularization
-7 | Moving beyongd linearity
+7 | Moving beyond linearity
 8 | Tree-based methods
 9 | Support vector machines
 10 | Unsupervised learning
